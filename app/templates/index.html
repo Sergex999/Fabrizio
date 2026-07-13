@@ -1,13 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
-<p>Enter the order number if the customer gave you one, otherwise their email address.</p>
-<form method="post" action="/lookup">
-  <label for="order_number">Order Number</label>
-  <input type="text" id="order_number" name="order_number" placeholder="#1234">
+<div class="panes">
+  <div class="pane">
+    <h2>Customer email</h2>
+    <p>Paste the customer's email below (including their address / order number if mentioned).</p>
+    <form method="post" action="/process">
+      <textarea name="raw_email" placeholder="Paste the customer's email here...">{{ raw_email or "" }}</textarea>
+      <button type="submit">Look Up &amp; Generate Reply</button>
+    </form>
+  </div>
 
-  <label for="email">Customer Email</label>
-  <input type="email" id="email" name="email" placeholder="customer@example.com">
+  <div class="pane">
+    <h2>Result</h2>
 
-  <button type="submit">Look Up Order</button>
-</form>
+    {% if email_text %}
+      <textarea id="email_text" readonly>{{ email_text }}</textarea>
+      <button onclick="copyEmail()">Copy to Clipboard</button>
+      <script>
+        function copyEmail() {
+          const el = document.getElementById('email_text');
+          el.select();
+          navigator.clipboard.writeText(el.value);
+        }
+      </script>
+
+    {% elif warnings is defined %}
+      {% if extraction_notes %}
+      <div class="notes">
+        <ul>
+          {% for n in extraction_notes %}<li>{{ n }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if warnings %}
+      <div class="warning">
+        <strong>Heads up:</strong>
+        <ul>
+          {% for w in warnings %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <p>Complete the missing fields below, then generate the email.</p>
+      <form method="post" action="/generate">
+        <input type="hidden" name="raw_email" value="{{ raw_email or '' }}">
+
+        <label for="customer_name">Customer Name</label>
+        <input type="text" id="customer_name" name="customer_name" value="{{ customer_name or '' }}" required>
+
+        <label for="carrier">Carrier (Last Mile)</label>
+        <input type="text" id="carrier" name="carrier" value="{{ carrier or '' }}" required>
+
+        <label for="tracking_number">Tracking Number (Last Mile)</label>
+        <input type="text" id="tracking_number" name="tracking_number" value="{{ tracking_number or '' }}" required>
+
+        <label for="tracking_url">Official Carrier Tracking Website</label>
+        <input type="text" id="tracking_url" name="tracking_url" value="{{ tracking_url or '' }}" required>
+
+        <label for="destination_country">Destination Country</label>
+        <input type="text" id="destination_country" name="destination_country" value="{{ destination_country or '' }}" required>
+
+        <button type="submit">Generate Email</button>
+      </form>
+
+    {% else %}
+      <p class="placeholder">The generated reply will appear here.</p>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

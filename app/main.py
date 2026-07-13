@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from app.carriers import get_official_url
 from app.config import settings
 from app.dianxiaomi_client import DianxiaomiClient
+from app.email_parser import extract_customer_email, extract_order_number
 from app.email_template import generate_email
 from app.shopify_client import ShopifyClient, fetch_access_token
 from app.yunexpress_client import YunExpressClient
@@ -34,15 +35,20 @@ def get_shopify_client() -> Optional[ShopifyClient]:
     )
 
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {})
+def run_pipeline(order_number: Optional[str], email: Optional[str]) -> tuple[dict, list[str]]:
+    """Runs Shopify -> dianxiaomi -> YunExpress -> carrier lookup, best-effort.
 
-
-@app.post("/lookup", response_class=HTMLResponse)
-def lookup(request: Request, order_number: str = Form(""), email: str = Form("")):
-    warnings = []
-    customer_name = carrier = tracking_number = tracking_url = destination_country = ""
+    Returns the fields collected so far (blank where a step failed) and a
+    list of warnings describing what needs to be filled in manually.
+    """
+    warnings: list[str] = []
+    fields = {
+        "customer_name": "",
+        "carrier": "",
+        "tracking_number": "",
+        "tracking_url": "",
+        "destination_country": "",
+    }
 
     shopify = get_shopify_client()
     if not shopify:
@@ -50,68 +56,98 @@ def lookup(request: Request, order_number: str = Form(""), email: str = Form("")
             "Shopify is not configured (missing SHOPIFY_SHOP_DOMAIN / "
             "SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET in .env) — fill in all fields manually below."
         )
-    else:
-        order = shopify.find_order(order_number=order_number or None, email=email or None)
-        if not order:
+        return fields, warnings
+
+    order = shopify.find_order(order_number=order_number, email=email)
+    if not order:
+        warnings.append(
+            "No matching Shopify order was found for that order number/email. "
+            "Fill in all fields manually below."
+        )
+        return fields, warnings
+
+    info = shopify.extract_shipping_info(order)
+    fields["customer_name"] = info["recipient_name"] or ""
+    fields["destination_country"] = info["country"] or ""
+
+    international_tracking = None
+    if fields["customer_name"]:
+        dianxiaomi = DianxiaomiClient(
+            settings.dianxiaomi_username,
+            settings.dianxiaomi_password,
+            settings.playwright_headless,
+        )
+        try:
+            international_tracking = dianxiaomi.find_tracking_number(fields["customer_name"])
+        except Exception as exc:  # scraping is best-effort, never block the flow
+            warnings.append(f"Could not look up dianxiaomi automatically ({exc}).")
+        if not international_tracking:
             warnings.append(
-                "No matching Shopify order was found for that order number/email. "
-                "Fill in all fields manually below."
+                "Could not find a tracking number on dianxiaomi automatically — "
+                "please search manually and fill in below."
             )
-        else:
-            info = shopify.extract_shipping_info(order)
-            customer_name = info["recipient_name"] or ""
-            destination_country = info["country"] or ""
 
-            international_tracking = None
-            if customer_name:
-                dianxiaomi = DianxiaomiClient(
-                    settings.dianxiaomi_username,
-                    settings.dianxiaomi_password,
-                    settings.playwright_headless,
+    if international_tracking:
+        yunexpress = YunExpressClient(settings.playwright_headless)
+        try:
+            last_mile = yunexpress.get_last_mile(international_tracking)
+        except Exception as exc:
+            last_mile = None
+            warnings.append(f"Could not look up YunExpress automatically ({exc}).")
+        if last_mile:
+            fields["carrier"] = last_mile.get("carrier") or ""
+            fields["tracking_number"] = last_mile.get("local_tracking_number") or international_tracking
+            fields["tracking_url"] = get_official_url(fields["carrier"]) or ""
+            if not fields["tracking_url"]:
+                warnings.append(
+                    f"No official tracking URL known for carrier '{fields['carrier']}' — "
+                    "add it to app/carriers.json or fill in below."
                 )
-                try:
-                    international_tracking = dianxiaomi.find_tracking_number(customer_name)
-                except Exception as exc:  # scraping is best-effort, never block the flow
-                    warnings.append(f"Could not look up dianxiaomi automatically ({exc}).")
-                if not international_tracking:
-                    warnings.append(
-                        "Could not find a tracking number on dianxiaomi automatically — "
-                        "please search manually and fill in below."
-                    )
+        else:
+            fields["tracking_number"] = international_tracking
+            warnings.append(
+                "Could not determine the Last Mile carrier on YunExpress automatically — "
+                "please check yuntrack.com manually and fill in below."
+            )
 
-            if international_tracking:
-                yunexpress = YunExpressClient(settings.playwright_headless)
-                try:
-                    last_mile = yunexpress.get_last_mile(international_tracking)
-                except Exception as exc:
-                    last_mile = None
-                    warnings.append(f"Could not look up YunExpress automatically ({exc}).")
-                if last_mile:
-                    carrier = last_mile.get("carrier") or ""
-                    tracking_number = last_mile.get("local_tracking_number") or international_tracking
-                    tracking_url = get_official_url(carrier) or ""
-                    if not tracking_url:
-                        warnings.append(
-                            f"No official tracking URL known for carrier '{carrier}' — "
-                            "add it to app/carriers.json or fill in below."
-                        )
-                else:
-                    tracking_number = international_tracking
-                    warnings.append(
-                        "Could not determine the Last Mile carrier on YunExpress automatically — "
-                        "please check yuntrack.com manually and fill in below."
-                    )
+    return fields, warnings
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(request, "index.html", {})
+
+
+@app.post("/process", response_class=HTMLResponse)
+def process(request: Request, raw_email: str = Form(...)):
+    order_number = extract_order_number(raw_email)
+    customer_email = extract_customer_email(raw_email)
+
+    extraction_notes = []
+    if order_number:
+        extraction_notes.append(f"Order number found: {order_number}")
+    if customer_email:
+        extraction_notes.append(f"Customer email found: {customer_email}")
+    if not order_number and not customer_email:
+        extraction_notes.append(
+            "Could not find an order number or customer email in the pasted text."
+        )
+
+    fields, warnings = run_pipeline(order_number, customer_email)
+
+    email_text = None
+    if all(fields.values()):
+        email_text = generate_email(**fields)
 
     return templates.TemplateResponse(
         request,
-        "review.html",
+        "index.html",
         {
+            "raw_email": raw_email,
+            "extraction_notes": extraction_notes,
             "warnings": warnings,
-            "customer_name": customer_name,
-            "carrier": carrier,
-            "tracking_number": tracking_number,
-            "tracking_url": tracking_url,
-            "destination_country": destination_country,
+            "email_text": email_text,
+            **fields,
         },
     )
 
@@ -119,6 +155,7 @@ def lookup(request: Request, order_number: str = Form(""), email: str = Form("")
 @app.post("/generate", response_class=HTMLResponse)
 def generate(
     request: Request,
+    raw_email: str = Form(""),
     customer_name: str = Form(...),
     carrier: str = Form(...),
     tracking_number: str = Form(...),
@@ -133,5 +170,7 @@ def generate(
         destination_country=destination_country,
     )
     return templates.TemplateResponse(
-        request, "result.html", {"email_text": email_text}
+        request,
+        "index.html",
+        {"raw_email": raw_email, "email_text": email_text},
     )

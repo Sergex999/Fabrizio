@@ -3,18 +3,22 @@
 Piccola web app locale che automatizza il flusso di tracking del customer
 care di Cor Bloom Jewelry:
 
-1. Amanda inserisce il numero d'ordine (o l'email del cliente).
-2. L'app cerca l'ordine su **Shopify** e recupera nome destinatario e paese
-   di destinazione.
-3. L'app cerca il tracking number internazionale su **dianxiaomi**
-   (login automatico + ricerca per nome destinatario).
-4. L'app interroga **YunExpress** (yuntrack.com) con quel tracking number
-   e recupera il "Last Mile carrier" e il tracking number locale.
-5. L'app cerca l'URL ufficiale del corriere in `app/carriers.json`.
-6. Tutti i campi vengono mostrati in una pagina di revisione **editabile**:
-   se un passaggio automatico fallisce, il campo resta vuoto e Amanda lo
-   compila a mano — il flusso non si blocca mai.
-7. Un click genera l'email finale, pronta da copiare/incollare.
+L'interfaccia è a due riquadri: a sinistra Amanda incolla la mail del
+cliente così com'è, a destra compare il risultato.
+
+1. L'app estrae dal testo incollato il numero d'ordine (pattern `CB12345`)
+   e/o l'indirizzo email del cliente.
+2. Cerca l'ordine su **Shopify** e recupera nome destinatario e paese di
+   destinazione.
+3. Cerca il tracking number internazionale su **dianxiaomi** (login
+   automatico + ricerca per nome destinatario).
+4. Interroga **YunExpress** (yuntrack.com) con quel tracking number e
+   recupera il "Last Mile carrier" e il tracking number locale.
+5. Cerca l'URL ufficiale del corriere in `app/carriers.json`.
+6. Se tutti i dati sono stati trovati, il riquadro destro mostra subito
+   l'email finale pronta da copiare. Se un passaggio automatico fallisce,
+   mostra invece i campi mancanti in un mini-form **editabile** — il
+   flusso non si blocca mai, Amanda completa a mano e genera comunque.
 
 ## ⚠️ Nota importante su dianxiaomi e YunExpress
 
