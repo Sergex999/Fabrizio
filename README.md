@@ -47,9 +47,16 @@ playwright install chromium
 cp .env.example .env
 # poi modifica .env con:
 #   SHOPIFY_SHOP_DOMAIN
-#   SHOPIFY_ACCESS_TOKEN  (Admin API access token con permesso read_orders)
+#   SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET  (da Dev Dashboard > Settings > Credentials,
+#     con scope read_orders configurato sull'app)
 #   DIANXIAOMI_USERNAME / DIANXIAOMI_PASSWORD
 ```
+
+L'app ottiene l'Admin API access token in automatico ad ogni avvio tramite il
+[client credentials grant](https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/token-exchange)
+di Shopify (`app/shopify_client.py::fetch_access_token`) — le app custom create
+dalla Dev Dashboard non mostrano più un token statico da "rivelare" nell'admin
+del negozio, quindi bastano Client ID e Client Secret.
 
 ## Avvio
 

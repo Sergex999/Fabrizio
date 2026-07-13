@@ -3,6 +3,26 @@ from typing import Optional
 import requests
 
 
+def fetch_access_token(shop_domain: str, client_id: str, client_secret: str) -> str:
+    """Obtains an Admin API access token via the client credentials grant.
+
+    This is how custom apps built through the Shopify Dev Dashboard get an
+    access token for a single store, without a static "reveal token" button
+    in the admin UI.
+    """
+    resp = requests.post(
+        f"https://{shop_domain}/admin/oauth/access_token",
+        json={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "grant_type": "client_credentials",
+        },
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
+
+
 class ShopifyClient:
     """Looks up orders in Shopify Admin API by order number or customer email."""
 

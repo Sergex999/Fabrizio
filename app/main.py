@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -6,11 +8,30 @@ from app.carriers import get_official_url
 from app.config import settings
 from app.dianxiaomi_client import DianxiaomiClient
 from app.email_template import generate_email
-from app.shopify_client import ShopifyClient
+from app.shopify_client import ShopifyClient, fetch_access_token
 from app.yunexpress_client import YunExpressClient
 
 app = FastAPI(title="Cor Bloom Tracking Assistant")
 templates = Jinja2Templates(directory="app/templates")
+
+_shopify_access_token_cache: Optional[str] = None
+
+
+def get_shopify_client() -> Optional[ShopifyClient]:
+    global _shopify_access_token_cache
+    if not settings.shopify_shop_domain or not settings.shopify_client_id or not settings.shopify_client_secret:
+        return None
+    if not _shopify_access_token_cache:
+        _shopify_access_token_cache = fetch_access_token(
+            settings.shopify_shop_domain,
+            settings.shopify_client_id,
+            settings.shopify_client_secret,
+        )
+    return ShopifyClient(
+        settings.shopify_shop_domain,
+        _shopify_access_token_cache,
+        settings.shopify_api_version,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -23,17 +44,13 @@ def lookup(request: Request, order_number: str = Form(""), email: str = Form("")
     warnings = []
     customer_name = carrier = tracking_number = tracking_url = destination_country = ""
 
-    if not settings.shopify_shop_domain or not settings.shopify_access_token:
+    shopify = get_shopify_client()
+    if not shopify:
         warnings.append(
             "Shopify is not configured (missing SHOPIFY_SHOP_DOMAIN / "
-            "SHOPIFY_ACCESS_TOKEN in .env) — fill in all fields manually below."
+            "SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET in .env) — fill in all fields manually below."
         )
     else:
-        shopify = ShopifyClient(
-            settings.shopify_shop_domain,
-            settings.shopify_access_token,
-            settings.shopify_api_version,
-        )
         order = shopify.find_order(order_number=order_number or None, email=email or None)
         if not order:
             warnings.append(
