@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Enter the order number if the customer gave you one, otherwise their email address.</p>
+<form method="post" action="/lookup">
+  <label for="order_number">Order Number</label>
+  <input type="text" id="order_number" name="order_number" placeholder="#1234">
+
+  <label for="email">Customer Email</label>
+  <input type="email" id="email" name="email" placeholder="customer@example.com">
+
+  <button type="submit">Look Up Order</button>
+</form>
+{% endblock %}

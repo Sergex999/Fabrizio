@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+{% if warnings %}
+<div class="warning">
+  <strong>Heads up:</strong>
+  <ul>
+    {% for w in warnings %}<li>{{ w }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<p>Review and complete the fields below, then generate the email.</p>
+<form method="post" action="/generate">
+  <label for="customer_name">Customer Name</label>
+  <input type="text" id="customer_name" name="customer_name" value="{{ customer_name }}" required>
+
+  <label for="carrier">Carrier (Last Mile)</label>
+  <input type="text" id="carrier" name="carrier" value="{{ carrier }}" required>
+
+  <label for="tracking_number">Tracking Number (Last Mile)</label>
+  <input type="text" id="tracking_number" name="tracking_number" value="{{ tracking_number }}" required>
+
+  <label for="tracking_url">Official Carrier Tracking Website</label>
+  <input type="text" id="tracking_url" name="tracking_url" value="{{ tracking_url }}" required>
+
+  <label for="destination_country">Destination Country</label>
+  <input type="text" id="destination_country" name="destination_country" value="{{ destination_country }}" required>
+
+  <button type="submit">Generate Email</button>
+</form>
+<a class="back" href="/">&larr; Start over</a>
+{% endblock %}

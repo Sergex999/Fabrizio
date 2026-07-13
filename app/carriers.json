@@ -1,0 +1,20 @@
+{
+  "dhl": "https://www.dhl.de",
+  "poste italiane": "https://www.poste.it",
+  "royal mail": "https://www.royalmail.com",
+  "usps": "https://www.usps.com",
+  "correos": "https://www.correos.es",
+  "la poste": "https://www.laposte.fr",
+  "colissimo": "https://www.laposte.fr",
+  "deutsche post": "https://www.deutschepost.de",
+  "postnl": "https://www.postnl.nl",
+  "australia post": "https://auspost.com.au",
+  "canada post": "https://www.canadapost-postescanada.ca",
+  "correios": "https://www.correios.com.br",
+  "hermes": "https://www.myhermes.de",
+  "evri": "https://www.evri.com",
+  "gls": "https://gls-group.com",
+  "an post": "https://www.anpost.com",
+  "bpost": "https://www.bpost.be",
+  "swiss post": "https://www.post.ch"
+}
