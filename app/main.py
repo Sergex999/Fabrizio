@@ -70,13 +70,14 @@ def run_pipeline(order_number: Optional[str], email: Optional[str]) -> tuple[dic
     fields["customer_name"] = info["recipient_name"] or ""
     fields["destination_country"] = info["country"] or ""
 
-    international_tracking = None
-    if fields["customer_name"]:
-        dianxiaomi = DianxiaomiClient(
-            settings.dianxiaomi_username,
-            settings.dianxiaomi_password,
-            settings.playwright_headless,
+    international_tracking = shopify.extract_tracking_number(order)
+    if international_tracking:
+        warnings.append(
+            f"Using tracking number already on file in Shopify ({international_tracking}) "
+            "— dianxiaomi lookup skipped."
         )
+    elif fields["customer_name"]:
+        dianxiaomi = DianxiaomiClient(settings.playwright_headless)
         try:
             international_tracking = dianxiaomi.find_tracking_number(fields["customer_name"])
         except Exception as exc:  # scraping is best-effort, never block the flow

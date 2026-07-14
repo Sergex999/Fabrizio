@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+dianxiaomi_state.json
+dianxiaomi_debug.png

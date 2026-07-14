@@ -79,3 +79,14 @@ class ShopifyClient:
             "country": shipping.get("country"),
             "email": order.get("email"),
         }
+
+    @staticmethod
+    def extract_tracking_number(order: dict) -> Optional[str]:
+        """Returns the tracking number Shopify already has on file, if the
+        order has been fulfilled. Freight forwarders like dianxiaomi write
+        this back to Shopify when they generate a shipping label."""
+        for fulfillment in order.get("fulfillments") or []:
+            tracking_number = fulfillment.get("tracking_number")
+            if tracking_number:
+                return tracking_number
+        return None
