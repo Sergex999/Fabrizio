@@ -2,62 +2,64 @@
 tracking number to its "Last Mile" carrier, official tracking website, and
 local tracking number.
 
-yuntrack.com is a public tracking form (no login required).
+yuntrack.com is a public tracking form (no login required). The results
+page is reachable directly by URL, so no form interaction is needed.
 """
 
+from pathlib import Path
 from typing import Optional
 
 from playwright.sync_api import sync_playwright
 
-TRACK_URL = "https://www.yuntrack.com/"
+RESULT_URL = "https://www.yuntrack.com/parcelTracking?id={tracking_number}"
+DEBUG_SCREENSHOT = Path(__file__).parent.parent / "yunexpress_debug.png"
+DEBUG_HTML = Path(__file__).parent.parent / "yunexpress_debug.html"
 
 
 class YunExpressClient:
     def __init__(self, headless: bool = True):
         self.headless = headless
 
-    def _pause_for_inspection(self, page):
-        """When running with a visible browser, keep the page open for a
-        while so it can be inspected manually before it closes."""
-        if not self.headless:
-            page.wait_for_timeout(60000)
+    def _save_debug_artifacts(self, page):
+        """Saves a screenshot and the page HTML so a failed lookup can be
+        inspected afterwards without keeping the browser open."""
+        try:
+            page.screenshot(path=str(DEBUG_SCREENSHOT))
+        except Exception:
+            pass
+        try:
+            DEBUG_HTML.write_text(page.content(), encoding="utf-8")
+        except Exception:
+            pass
 
     def get_last_mile(self, tracking_number: str) -> Optional[dict]:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
             page = browser.new_page()
             try:
-                page.goto(TRACK_URL)
-                page.wait_for_selector("#search", timeout=15000)
+                page.goto(RESULT_URL.format(tracking_number=tracking_number))
 
                 try:
                     page.locator(".cookies-btn-accept").first.click(timeout=3000)
                 except Exception:
                     pass  # no cookie banner this time
 
-                page.fill("#search", tracking_number)
-                page.locator(".btn", has_text="Track").click()
-
+                # The "Additional Notes" box loads later than the rest of the
+                # page, so wait for the actual "Last Mile" text to show up.
                 try:
-                    page.wait_for_selector(".rightTop", timeout=15000)
+                    page.locator("p", has_text="Last Mile:").first.wait_for(timeout=30000)
                 except Exception:
-                    self._pause_for_inspection(page)
+                    self._save_debug_artifacts(page)
                     return None
 
-                # .where only contains its own first line in the real DOM
-                # (nested <p> tags get auto-closed by the browser), so scope
-                # to the surrounding "Additional Notes" container instead.
-                # There's also a "Shipment Information" box that shares the
-                # .rightTop class, so filter specifically for the one that
-                # has the "Additional Notes" heading.
                 container = page.locator(".rightTop", has_text="Additional Notes").first
                 if container.count() == 0:
-                    self._pause_for_inspection(page)
+                    self._save_debug_artifacts(page)
                     return None
 
                 carrier_line = container.locator("p", has_text="Last Mile:").first
                 if carrier_line.count() == 0:
-                    self._pause_for_inspection(page)
+                    self._save_debug_artifacts(page)
                     return None
                 carrier = carrier_line.inner_text().split(":", 1)[1].strip()
 
