@@ -5,10 +5,14 @@ local tracking number.
 yuntrack.com is a public tracking form (no login required). The results
 page is reachable directly by URL, so no form interaction is needed.
 
-Note: the "Additional Notes" box is rendered twice in the DOM — one copy
-is hidden inside a table row. Never wait for visibility (the first match
-may be the hidden copy); wait for attachment and read text via
-text_content(), both of which work on hidden elements too.
+Notes on the page's quirks:
+- The "Additional Notes" box is rendered twice in the DOM; one copy is
+  hidden inside a table row. Never wait for visibility (the first match
+  may be the hidden copy); wait for attachment and read text via
+  text_content(), both of which work on hidden elements too.
+- The box's content varies per shipment: some show "Last Mile: <carrier>"
+  plus a website, others only show "Last Mile Website:". Return whatever
+  is available and let the app's manual-fallback form cover the rest.
 """
 
 from pathlib import Path
@@ -51,32 +55,35 @@ class YunExpressClient:
 
                 try:
                     page.wait_for_selector(
-                        "p:has-text('Last Mile:')", state="attached", timeout=30000
+                        ".rightTop:has-text('Additional Notes')",
+                        state="attached",
+                        timeout=30000,
                     )
                 except Exception:
                     self._save_debug_artifacts(page)
                     return None
 
                 container = page.locator(".rightTop", has_text="Additional Notes").first
-                if container.count() == 0:
-                    self._save_debug_artifacts(page)
-                    return None
 
                 # Vue builds this box with <p> elements nested inside the
                 # .where <p>, so both the outer block and the inner line
                 # match has_text; .last picks the innermost, which contains
-                # only "Last Mile: <carrier>".
+                # only "Last Mile: <carrier>". Some shipments omit this
+                # line entirely and only show the website.
+                carrier = ""
                 carrier_line = container.locator("p", has_text="Last Mile:").last
-                if carrier_line.count() == 0:
-                    self._save_debug_artifacts(page)
-                    return None
-                carrier_text = carrier_line.text_content() or ""
-                carrier = carrier_text.split(":", 1)[1].strip()
+                if carrier_line.count() > 0:
+                    carrier_text = carrier_line.text_content() or ""
+                    carrier = carrier_text.split(":", 1)[1].strip()
 
                 website_link = container.locator("a[href^='http']").first
                 tracking_url = (
                     website_link.get_attribute("href") if website_link.count() > 0 else None
                 )
+
+                if not carrier and not tracking_url:
+                    self._save_debug_artifacts(page)
+                    return None
 
                 return {
                     "carrier": carrier,
