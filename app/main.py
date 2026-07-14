@@ -98,7 +98,9 @@ def run_pipeline(order_number: Optional[str], email: Optional[str]) -> tuple[dic
         if last_mile:
             fields["carrier"] = last_mile.get("carrier") or ""
             fields["tracking_number"] = last_mile.get("local_tracking_number") or international_tracking
-            fields["tracking_url"] = get_official_url(fields["carrier"]) or ""
+            fields["tracking_url"] = (
+                last_mile.get("tracking_url") or get_official_url(fields["carrier"]) or ""
+            )
             if not fields["tracking_url"]:
                 warnings.append(
                     f"No official tracking URL known for carrier '{fields['carrier']}' — "

@@ -1,11 +1,8 @@
 """Browser automation against yuntrack.com to resolve an international
-tracking number to its "Last Mile" carrier and local tracking number.
+tracking number to its "Last Mile" carrier, official tracking website, and
+local tracking number.
 
-IMPORTANT: yuntrack.com returned HTTP 403 when probed from the development
-sandbox used to write this module, so the CSS selectors below are best-effort
-placeholders based on the described page layout, not verified against the
-real DOM. Run this once with PLAYWRIGHT_HEADLESS=false and fix any selector
-mismatch before relying on it.
+yuntrack.com is a public tracking form (no login required).
 """
 
 from typing import Optional
@@ -26,27 +23,29 @@ class YunExpressClient:
             try:
                 page.goto(TRACK_URL)
                 page.wait_for_load_state("networkidle")
-                # PLACEHOLDER SELECTOR: verify against the real "Track" input.
-                page.fill(
-                    "input[name='trackNumber'], input#trackingNumber",
-                    tracking_number,
-                )
-                page.click("button:has-text('Track')")
+
+                page.fill("#search", tracking_number)
+                page.locator(".btn", has_text="Track").click()
                 page.wait_for_load_state("networkidle")
 
-                # PLACEHOLDER SELECTORS: verify against the real "Last Mile"
-                # panel on the results page.
-                carrier = page.locator(".last-mile-carrier").first
-                local_tracking = page.locator(".last-mile-tracking-number").first
-                if carrier.count() == 0:
+                where = page.locator(".where").first
+                if where.count() == 0:
                     return None
+
+                carrier_line = where.locator("p", has_text="Last Mile:").first
+                if carrier_line.count() == 0:
+                    return None
+                carrier = carrier_line.inner_text().split(":", 1)[1].strip()
+
+                website_link = where.locator("a[href^='http']").first
+                tracking_url = (
+                    website_link.get_attribute("href") if website_link.count() > 0 else None
+                )
+
                 return {
-                    "carrier": carrier.inner_text().strip(),
-                    "local_tracking_number": (
-                        local_tracking.inner_text().strip()
-                        if local_tracking.count()
-                        else None
-                    ),
+                    "carrier": carrier,
+                    "tracking_url": tracking_url,
+                    "local_tracking_number": None,
                 }
             finally:
                 browser.close()
