@@ -22,11 +22,15 @@ class YunExpressClient:
             page = browser.new_page()
             try:
                 page.goto(TRACK_URL)
-                page.wait_for_load_state("networkidle")
+                page.wait_for_selector("#search", timeout=15000)
 
                 page.fill("#search", tracking_number)
                 page.locator(".btn", has_text="Track").click()
-                page.wait_for_load_state("networkidle")
+
+                try:
+                    page.wait_for_selector(".where", timeout=15000)
+                except Exception:
+                    return None
 
                 where = page.locator(".where").first
                 if where.count() == 0:
