@@ -16,6 +16,12 @@ class YunExpressClient:
     def __init__(self, headless: bool = True):
         self.headless = headless
 
+    def _pause_for_inspection(self, page):
+        """When running with a visible browser, keep the page open for a
+        while so it can be inspected manually before it closes."""
+        if not self.headless:
+            page.wait_for_timeout(60000)
+
     def get_last_mile(self, tracking_number: str) -> Optional[dict]:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
@@ -35,14 +41,17 @@ class YunExpressClient:
                 try:
                     page.wait_for_selector(".where", timeout=15000)
                 except Exception:
+                    self._pause_for_inspection(page)
                     return None
 
                 where = page.locator(".where").first
                 if where.count() == 0:
+                    self._pause_for_inspection(page)
                     return None
 
                 carrier_line = where.locator("p", has_text="Last Mile:").first
                 if carrier_line.count() == 0:
+                    self._pause_for_inspection(page)
                     return None
                 carrier = carrier_line.inner_text().split(":", 1)[1].strip()
 
