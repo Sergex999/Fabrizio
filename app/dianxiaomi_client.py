@@ -46,6 +46,13 @@ class DianxiaomiClient:
         except Exception:
             pass  # debugging aid only, never block the real lookup
 
+        # Dismiss a notice/announcement popup that sometimes covers the page
+        # on load and blocks clicks underneath it.
+        try:
+            page.locator(".ant-modal-close").first.click(timeout=3000)
+        except Exception:
+            pass  # no popup this time
+
         # Switch the order list into "search" mode.
         page.locator(".switch-search-mode--item", has_text="搜索").click()
         # Pick "收件人" (recipient) as the field to search by.
