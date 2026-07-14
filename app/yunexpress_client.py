@@ -25,7 +25,7 @@ class YunExpressClient:
                 page.wait_for_selector("#search", timeout=15000)
 
                 try:
-                    page.locator("button", has_text="Accept").first.click(timeout=3000)
+                    page.locator(".cookies-btn-accept").first.click(timeout=3000)
                 except Exception:
                     pass  # no cookie banner this time
 
