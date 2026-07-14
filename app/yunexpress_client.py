@@ -24,6 +24,11 @@ class YunExpressClient:
                 page.goto(TRACK_URL)
                 page.wait_for_selector("#search", timeout=15000)
 
+                try:
+                    page.locator("button", has_text="Accept").first.click(timeout=3000)
+                except Exception:
+                    pass  # no cookie banner this time
+
                 page.fill("#search", tracking_number)
                 page.locator(".btn", has_text="Track").click()
 
