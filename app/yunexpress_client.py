@@ -4,6 +4,11 @@ local tracking number.
 
 yuntrack.com is a public tracking form (no login required). The results
 page is reachable directly by URL, so no form interaction is needed.
+
+Note: the "Additional Notes" box is rendered twice in the DOM — one copy
+is hidden inside a table row. Never wait for visibility (the first match
+may be the hidden copy); wait for attachment and read text via
+text_content(), both of which work on hidden elements too.
 """
 
 from pathlib import Path
@@ -44,10 +49,10 @@ class YunExpressClient:
                 except Exception:
                     pass  # no cookie banner this time
 
-                # The "Additional Notes" box loads later than the rest of the
-                # page, so wait for the actual "Last Mile" text to show up.
                 try:
-                    page.locator("p", has_text="Last Mile:").first.wait_for(timeout=30000)
+                    page.wait_for_selector(
+                        "p:has-text('Last Mile:')", state="attached", timeout=30000
+                    )
                 except Exception:
                     self._save_debug_artifacts(page)
                     return None
@@ -57,11 +62,16 @@ class YunExpressClient:
                     self._save_debug_artifacts(page)
                     return None
 
-                carrier_line = container.locator("p", has_text="Last Mile:").first
+                # Vue builds this box with <p> elements nested inside the
+                # .where <p>, so both the outer block and the inner line
+                # match has_text; .last picks the innermost, which contains
+                # only "Last Mile: <carrier>".
+                carrier_line = container.locator("p", has_text="Last Mile:").last
                 if carrier_line.count() == 0:
                     self._save_debug_artifacts(page)
                     return None
-                carrier = carrier_line.inner_text().split(":", 1)[1].strip()
+                carrier_text = carrier_line.text_content() or ""
+                carrier = carrier_text.split(":", 1)[1].strip()
 
                 website_link = container.locator("a[href^='http']").first
                 tracking_url = (
