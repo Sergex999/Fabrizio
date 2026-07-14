@@ -39,23 +39,26 @@ class YunExpressClient:
                 page.locator(".btn", has_text="Track").click()
 
                 try:
-                    page.wait_for_selector(".where", timeout=15000)
+                    page.wait_for_selector(".rightTop", timeout=15000)
                 except Exception:
                     self._pause_for_inspection(page)
                     return None
 
-                where = page.locator(".where").first
-                if where.count() == 0:
+                # .where only contains its own first line in the real DOM
+                # (nested <p> tags get auto-closed by the browser), so scope
+                # to the surrounding "Additional Notes" container instead.
+                container = page.locator(".rightTop").first
+                if container.count() == 0:
                     self._pause_for_inspection(page)
                     return None
 
-                carrier_line = where.locator("p", has_text="Last Mile:").first
+                carrier_line = container.locator("p", has_text="Last Mile:").first
                 if carrier_line.count() == 0:
                     self._pause_for_inspection(page)
                     return None
                 carrier = carrier_line.inner_text().split(":", 1)[1].strip()
 
-                website_link = where.locator("a[href^='http']").first
+                website_link = container.locator("a[href^='http']").first
                 tracking_url = (
                     website_link.get_attribute("href") if website_link.count() > 0 else None
                 )
