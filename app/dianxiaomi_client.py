@@ -41,24 +41,22 @@ class DianxiaomiClient:
         page.goto(ORDERS_URL)
         page.wait_for_load_state("networkidle")
 
-        # Always save a screenshot so the real page structure can be
-        # inspected if the selectors below don't match.
-        page.screenshot(path=str(DEBUG_SCREENSHOT), full_page=True)
+        try:
+            page.screenshot(path=str(DEBUG_SCREENSHOT))
+        except Exception:
+            pass  # debugging aid only, never block the real lookup
 
-        # PLACEHOLDER SELECTOR: verify against the real search box for the
-        # recipient/consignee name filter.
-        search_box = page.locator(
-            "input[placeholder*='收件人'], input[name='receiverName']"
-        ).first
-        if search_box.count() == 0:
-            return None
-        search_box.fill(recipient_name)
-        search_box.press("Enter")
+        # Switch the order list into "search" mode.
+        page.locator(".switch-search-mode--item", has_text="搜索").click()
+        # Pick "收件人" (recipient) as the field to search by.
+        page.locator(".d-tag-group-item__inner", has_text="收件人").click()
+        # Type the recipient name and submit the search.
+        page.fill("#orderSearchInput", recipient_name)
+        page.locator("button[type='submit']", has_text="搜索").click()
         page.wait_for_load_state("networkidle")
 
-        # PLACEHOLDER SELECTOR: verify against the real results table cell
-        # that holds the international tracking number.
-        tracking_cell = page.locator("td.tracking-number, .track-no").first
-        if tracking_cell.count() == 0:
+        # The international tracking number is shown as a clickable span.
+        tracking_span = page.locator("span.pointer[title='点击查看物流追踪']").first
+        if tracking_span.count() == 0:
             return None
-        return tracking_cell.inner_text().strip()
+        return tracking_span.inner_text().strip()
