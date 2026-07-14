@@ -49,7 +49,7 @@ class DianxiaomiClient:
         # Dismiss a notice/announcement popup that sometimes covers the page
         # on load and blocks clicks underneath it.
         try:
-            page.locator(".ant-modal-close").first.click(timeout=3000)
+            page.locator(".notice-list-modal__header-close").first.click(timeout=3000)
         except Exception:
             pass  # no popup this time
 
