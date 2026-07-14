@@ -47,7 +47,10 @@ class YunExpressClient:
                 # .where only contains its own first line in the real DOM
                 # (nested <p> tags get auto-closed by the browser), so scope
                 # to the surrounding "Additional Notes" container instead.
-                container = page.locator(".rightTop").first
+                # There's also a "Shipment Information" box that shares the
+                # .rightTop class, so filter specifically for the one that
+                # has the "Additional Notes" heading.
+                container = page.locator(".rightTop", has_text="Additional Notes").first
                 if container.count() == 0:
                     self._pause_for_inspection(page)
                     return None
