@@ -64,6 +64,12 @@ class DianxiaomiClient:
             page = context.new_page()
             try:
                 return self._search_recipient(page, recipient_name)
+            except Exception:
+                # Also capture the page state when a step blows up (goto
+                # timeout, intercepted click, ...), not just on graceful
+                # "not found" returns.
+                self._save_debug_artifacts(page)
+                raise
             finally:
                 browser.close()
 
