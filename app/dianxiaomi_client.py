@@ -19,6 +19,14 @@ DEBUG_HTML = Path(__file__).parent.parent / "dianxiaomi_debug.html"
 
 TRACKING_SPAN = "span.pointer[title='点击查看物流追踪']"
 
+# Close controls of the various announcement/notice popups that cover the
+# page on load and intercept clicks. Tried in order, all best-effort.
+POPUP_CLOSERS = [
+    ".notice-list-modal__header-close",
+    "button:has-text('关闭')",
+    ".ant-modal-close",
+]
+
 
 class DianxiaomiClient:
     def __init__(self, headless: bool = True):
@@ -35,6 +43,13 @@ class DianxiaomiClient:
             DEBUG_HTML.write_text(page.content(), encoding="utf-8")
         except Exception:
             pass
+
+    def _dismiss_popups(self, page):
+        for selector in POPUP_CLOSERS:
+            try:
+                page.locator(selector).first.click(timeout=2000)
+            except Exception:
+                pass  # that popup isn't there this time
 
     def find_tracking_number(self, recipient_name: str) -> Optional[str]:
         if not STATE_FILE.exists():
@@ -53,15 +68,19 @@ class DianxiaomiClient:
                 browser.close()
 
     def _search_recipient(self, page, recipient_name: str) -> Optional[str]:
-        page.goto(ORDERS_URL)
-        page.wait_for_load_state("networkidle")
-
-        # Dismiss a notice/announcement popup that sometimes covers the page
-        # on load and blocks clicks underneath it.
+        # The orders page keeps loading assets in the background, so the
+        # full "load" event may never fire within the timeout. Settle for
+        # the DOM being ready, then wait for the element we actually need.
+        page.goto(ORDERS_URL, wait_until="domcontentloaded", timeout=60000)
         try:
-            page.locator(".notice-list-modal__header-close").first.click(timeout=3000)
+            page.wait_for_selector(
+                ".switch-search-mode--item", state="attached", timeout=30000
+            )
         except Exception:
-            pass  # no popup this time
+            self._save_debug_artifacts(page)
+            return None
+
+        self._dismiss_popups(page)
 
         # Switch the order list into "search" mode.
         page.locator(".switch-search-mode--item", has_text="搜索").click()
