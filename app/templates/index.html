@@ -14,11 +14,24 @@
     <h2>Result</h2>
 
     {% if email_text %}
+      <label for="email_subject">Subject</label>
+      <div class="copy-row">
+        <input type="text" id="email_subject" readonly value="{{ email_subject }}">
+        <button type="button" onclick="copyField('email_subject')">Copy</button>
+      </div>
+
+      <label for="email_preheader">Preheader</label>
+      <div class="copy-row">
+        <input type="text" id="email_preheader" readonly value="{{ email_preheader }}">
+        <button type="button" onclick="copyField('email_preheader')">Copy</button>
+      </div>
+
+      <label for="email_text">Body</label>
       <textarea id="email_text" readonly>{{ email_text }}</textarea>
-      <button onclick="copyEmail()">Copy to Clipboard</button>
+      <button type="button" onclick="copyField('email_text')">Copy to Clipboard</button>
       <script>
-        function copyEmail() {
-          const el = document.getElementById('email_text');
+        function copyField(id) {
+          const el = document.getElementById(id);
           el.select();
           navigator.clipboard.writeText(el.value);
         }

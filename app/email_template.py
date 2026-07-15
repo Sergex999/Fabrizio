@@ -20,6 +20,30 @@ Cor Bloom Jewelry Customer Care Team \U0001F48E
 """
 
 
+SUBJECT_TEMPLATE = "Your Cor Bloom order is on its way \U0001F48E Tracking info inside"
+
+PREHEADER_TEMPLATE = (
+    "Your package is traveling to {destination_country} — track it with "
+    "{carrier} using tracking number {tracking_number}."
+)
+
+
+def generate_subject() -> str:
+    return SUBJECT_TEMPLATE
+
+
+def generate_preheader(
+    carrier: str,
+    tracking_number: str,
+    destination_country: str,
+) -> str:
+    return PREHEADER_TEMPLATE.format(
+        carrier=carrier,
+        tracking_number=tracking_number,
+        destination_country=destination_country,
+    )
+
+
 def generate_email(
     customer_name: str,
     carrier: str,

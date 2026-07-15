@@ -8,7 +8,7 @@ from app.carriers import get_official_url
 from app.config import settings
 from app.dianxiaomi_client import DianxiaomiClient
 from app.email_parser import extract_customer_email, extract_order_number
-from app.email_template import generate_email
+from app.email_template import generate_email, generate_preheader, generate_subject
 from app.shopify_client import ShopifyClient, fetch_access_token
 from app.yunexpress_client import YunExpressClient
 
@@ -139,8 +139,16 @@ def process(request: Request, raw_email: str = Form(...)):
     fields, warnings = run_pipeline(order_number, customer_email)
 
     email_text = None
+    email_subject = None
+    email_preheader = None
     if all(fields.values()):
         email_text = generate_email(**fields)
+        email_subject = generate_subject()
+        email_preheader = generate_preheader(
+            carrier=fields["carrier"],
+            tracking_number=fields["tracking_number"],
+            destination_country=fields["destination_country"],
+        )
 
     return templates.TemplateResponse(
         request,
@@ -150,6 +158,8 @@ def process(request: Request, raw_email: str = Form(...)):
             "extraction_notes": extraction_notes,
             "warnings": warnings,
             "email_text": email_text,
+            "email_subject": email_subject,
+            "email_preheader": email_preheader,
             **fields,
         },
     )
@@ -172,8 +182,19 @@ def generate(
         tracking_url=tracking_url,
         destination_country=destination_country,
     )
+    email_subject = generate_subject()
+    email_preheader = generate_preheader(
+        carrier=carrier,
+        tracking_number=tracking_number,
+        destination_country=destination_country,
+    )
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"raw_email": raw_email, "email_text": email_text},
+        {
+            "raw_email": raw_email,
+            "email_text": email_text,
+            "email_subject": email_subject,
+            "email_preheader": email_preheader,
+        },
     )
