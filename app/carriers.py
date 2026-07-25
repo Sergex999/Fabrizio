@@ -1,8 +1,9 @@
 import json
-from pathlib import Path
 from typing import Optional
 
-_CARRIERS_FILE = Path(__file__).parent / "carriers.json"
+from app.paths import bundle_dir
+
+_CARRIERS_FILE = bundle_dir() / "app" / "carriers.json"
 
 
 def get_official_url(carrier_name: Optional[str]) -> Optional[str]:

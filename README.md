@@ -70,6 +70,36 @@ uvicorn app.main:app --reload
 
 Apri http://127.0.0.1:8000/
 
+## Creare l'eseguibile per Windows
+
+Per far girare l'app sul PC di Amanda senza installare Python, su una macchina
+**Windows** con Python 3.10+ installato:
+
+```
+build_exe.bat
+```
+
+Lo script crea un ambiente di build isolato (`.venv-build`), installa le
+dipendenze e PyInstaller, scarica Chromium dentro il pacchetto playwright
+(`PLAYWRIGHT_BROWSERS_PATH=0`, così finisce dentro il pacchetto) e compila
+usando `tracking_assistant.spec`.
+
+Risultato: la cartella `dist\CorBloomTrackingAssistant\` (~500 MB, Chromium
+incluso). **Va copiata tutta**, non solo il file `.exe`.
+
+Primo avvio sul PC di destinazione:
+
+1. Apri il file `.env` dentro la cartella e inserisci le credenziali Shopify.
+2. Lancia una volta `CorBloomTrackingAssistant.exe --setup-session` per il
+   login manuale a dianxiaomi (captcha): salva `dianxiaomi_state.json`
+   accanto all'eseguibile.
+3. Poi basta un doppio clic su `CorBloomTrackingAssistant.exe`: parte il
+   server locale e si apre il browser sulla pagina dell'app. La finestra nera
+   del terminale va lasciata aperta finché l'app è in uso.
+
+La build **deve** essere fatta su Windows: PyInstaller non fa
+cross-compilazione, quindi un `.exe` non si può produrre da Linux o macOS.
+
 ## Test
 
 I test coprono la logica pura (generazione email, mapping corriere →
@@ -91,9 +121,13 @@ e l'URL ufficiale di tracking, es.:
 ## Struttura
 
 ```
+build_exe.bat           # build dell'eseguibile Windows
+tracking_assistant.spec # configurazione PyInstaller
+run_app.py              # avvio dell'app impacchettata (server + browser)
 app/
   main.py               # FastAPI: pagine e orchestrazione del flusso
   config.py             # lettura variabili da .env
+  paths.py              # percorsi validi sia da sorgente sia da .exe
   shopify_client.py     # ricerca ordine su Shopify Admin API
   dianxiaomi_client.py  # Playwright: login + ricerca tracking per destinatario
   yunexpress_client.py  # Playwright: risoluzione Last Mile carrier

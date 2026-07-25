@@ -9,11 +9,12 @@ from app.config import settings
 from app.dianxiaomi_client import DianxiaomiClient
 from app.email_parser import extract_customer_email, extract_order_number
 from app.email_template import generate_email
+from app.paths import bundle_dir
 from app.shopify_client import ShopifyClient, fetch_access_token
 from app.yunexpress_client import YunExpressClient
 
 app = FastAPI(title="Cor Bloom Tracking Assistant")
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(bundle_dir() / "app" / "templates"))
 
 _shopify_access_token_cache: Optional[str] = None
 

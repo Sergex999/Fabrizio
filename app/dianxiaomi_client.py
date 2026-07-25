@@ -7,15 +7,16 @@ browser session (cookies) created once via setup_dianxiaomi_session.py after
 a manual login. Re-run that script whenever the saved session expires.
 """
 
-from pathlib import Path
 from typing import Optional
 
 from playwright.sync_api import sync_playwright
 
+from app.paths import app_dir
+
 ORDERS_URL = "https://www.dianxiaomi.com/web/order/all?go=m1-1"
-STATE_FILE = Path(__file__).parent.parent / "dianxiaomi_state.json"
-DEBUG_SCREENSHOT = Path(__file__).parent.parent / "dianxiaomi_debug.png"
-DEBUG_HTML = Path(__file__).parent.parent / "dianxiaomi_debug.html"
+STATE_FILE = app_dir() / "dianxiaomi_state.json"
+DEBUG_SCREENSHOT = app_dir() / "dianxiaomi_debug.png"
+DEBUG_HTML = app_dir() / "dianxiaomi_debug.html"
 
 TRACKING_SPAN = "span.pointer[title='点击查看物流追踪']"
 

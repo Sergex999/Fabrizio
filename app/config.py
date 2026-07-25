@@ -2,7 +2,9 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+from app.paths import app_dir
+
+load_dotenv(app_dir() / ".env")
 
 
 class Settings:
