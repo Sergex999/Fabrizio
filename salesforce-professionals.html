@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certified Salesforce Professionals — GSAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+<!-- Clash Display is already loaded globally on nmcconsulting.it (it's the site's
+     heading font everywhere else); Space Grotesk is its own fallback, same as the
+     rest of the site, in case Clash Display isn't reachable in a given context. -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- GSAP core + ScrollTrigger are already loaded globally on nmcconsulting.it.
+     The services section no longer needs Draggable/InertiaPlugin: the 3D
+     carousel has been replaced by an expanding-cards accordion (pure CSS
+     transitions + a small click handler), so no extra plugins are loaded. -->
+<style>
+  .nmc-why, .nmc-why * { box-sizing: border-box; margin: 0; padding: 0; }
+  .nmc-why {
+    --c-bright: 123, 97, 255;
+    --c-deep: 75, 47, 209;
+    --c-dark: 46, 51, 70;
+    /* same two type roles used everywhere else on the site: Clash Display for
+       headings, Plus Jakarta Sans for everything else. */
+    --font-heading: 'Clash Display', 'Space Grotesk', sans-serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: transparent;
+    font-family: var(--font-body);
+    padding: 80px 24px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* dot-grid filler */
+  .nmc-why .page-frame { position: relative; overflow: hidden; }
+  .nmc-why .page-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(var(--c-bright), 0.16) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse 60% 90% at 50% 50%, transparent 55%, black 100%);
+    mask-image: radial-gradient(ellipse 60% 90% at 50% 50%, transparent 55%, black 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .nmc-why .section-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 620px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .nmc-why .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0 auto 34px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--c-bright), 0.3);
+    background: rgba(var(--c-bright), 0.08);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .nmc-why .section-label .tag-bracket { color: rgba(255, 255, 255, 0.4); }
+  .nmc-why .section-label .tag-name { color: rgb(var(--c-bright)); }
+  .nmc-why .section-label .tag-slash { color: rgba(255, 255, 255, 0.4); }
+
+  /* ---------------------------------------------------------------- */
+  /* Certification badge + credentials — an elegant seal instead of   */
+  /* the terminal/console-log look                                     */
+  /* ---------------------------------------------------------------- */
+  .nmc-why .cert-badge { width: 92px; height: 92px; margin: 0 auto 30px; position: relative; }
+  .nmc-why .cert-badge svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .nmc-why .cert-badge .ring-dash {
+    fill: none;
+    stroke: rgba(var(--c-bright), 0.5);
+    stroke-width: 1.4;
+    stroke-dasharray: 3 7;
+  }
+  .nmc-why .cert-badge .ring-fill { filter: drop-shadow(0 10px 22px rgba(var(--c-deep), 0.45)); }
+  .nmc-why .cert-badge .grad-a { stop-color: rgb(var(--c-bright)); }
+  .nmc-why .cert-badge .grad-b { stop-color: rgb(var(--c-deep)); }
+  .nmc-why .cert-badge .check-path {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .nmc-why h2.cert-heading {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    line-height: 1.28;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    margin-bottom: 40px;
+    text-wrap: balance;
+  }
+
+  .nmc-why .cert-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    text-align: left;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .nmc-why .cert-point { display: flex; gap: 14px; align-items: flex-start; }
+  .nmc-why .cert-point .check-ico { flex-shrink: 0; width: 21px; height: 21px; margin-top: 2px; color: rgb(var(--c-bright)); }
+  .nmc-why .cert-point .check-ico path { fill: none; stroke: currentColor; }
+  .nmc-why .cert-point p { color: rgba(255, 255, 255, 0.82); font-size: 15px; line-height: 1.75; }
+  .nmc-why .accent { color: rgb(var(--c-bright)); font-weight: 700; }
+  .nmc-why .accent-deep { color: rgb(var(--c-deep)); font-weight: 700; }
+
+  /* word-mask reveal used for both headings */
+  .nmc-why .word-mask { display: inline-block; overflow: hidden; vertical-align: top; }
+  .nmc-why .word-inner { display: inline-block; will-change: transform; }
+
+  @media (max-width: 900px) { .nmc-why h2.cert-heading { font-size: 30px; } }
+  @media (max-width: 640px) {
+    .nmc-why h2.cert-heading { font-size: 25px; margin-bottom: 30px; }
+    .nmc-why .cert-badge { width: 74px; height: 74px; margin-bottom: 24px; }
+    .nmc-why .section-label { font-size: 15px; padding: 6px 12px; }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Section 2 — "What we provide" + expanding-cards accordion        */
+  /* ---------------------------------------------------------------- */
+  .nmc-why .svc-root {
+    --svc-font: var(--font-body);
+    font-family: var(--svc-font);
+    padding: 100px 0 90px;
+  }
+  .nmc-why .svc-root .wrap { max-width: 1400px; margin: 0 auto; }
+  .nmc-why .svc-root .head {
+    font-family: var(--font-body);
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 60px;
+    margin-bottom: 44px;
+    padding-bottom: 30px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .nmc-why .svc-root .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 16px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--c-bright), 0.3);
+    background: rgba(var(--c-bright), 0.08);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .nmc-why .svc-root .eyebrow .b { color: rgba(255,255,255,0.4); }
+  .nmc-why .svc-root .eyebrow .n { color: rgb(var(--c-bright)); }
+  .nmc-why .svc-root .head h2 {
+    font-family: var(--font-heading);
+    font-size: clamp(28px, 3vw, 38px);
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+    margin-bottom: 0;
+  }
+  .nmc-why .svc-root .head h2 .cursor {
+    display: inline-block;
+    width: 3px;
+    height: 0.85em;
+    margin-left: 6px;
+    background: rgb(var(--c-bright));
+    vertical-align: -0.08em;
+    animation: svc-blink 1s step-end infinite;
+  }
+  @keyframes svc-blink { 50% { opacity: 0; } }
+  .nmc-why .svc-root .head-copy {
+    max-width: 520px;
+    padding-top: 6px;
+    font-size: 13.5px;
+    line-height: 1.8;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .nmc-why .svc-root .head-copy b { color: rgba(255, 255, 255, 0.85); font-weight: 700; }
+  .nmc-why .svc-root .hint {
+    font-family: var(--font-body);
+    max-width: 520px;
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: rgba(var(--c-bright), 0.75);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nmc-why .svc-root .hint svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* expanding-cards accordion: a flex row of options; the active one
+     grows (flex-grow) while the others collapse to a thin icon strip.
+     Same easing/geometry language as the reference pen, restyled to
+     the site's palette (gradient duotones instead of photos). */
+  .nmc-why .options {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1100px;
+    height: 400px;
+    margin: 0 auto;
+    min-width: 0;
+  }
+  .nmc-why .option {
+    position: relative;
+    overflow: hidden;
+    min-width: 60px;
+    margin: 10px;
+    flex-grow: 1;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background-image: var(--optionBackground, linear-gradient(160deg, rgb(var(--c-deep)), rgb(var(--c-bright))));
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: 0.5s cubic-bezier(0.05, 0.61, 0.41, 0.95);
+  }
+  .nmc-why .option:focus-visible {
+    outline: 2px solid rgb(var(--c-bright));
+    outline-offset: 3px;
+  }
+  /* soft top-corner glow + dot texture so the gradients don't read flat */
+  .nmc-why .option::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(120% 90% at 85% 0%, rgba(255, 255, 255, 0.20), transparent 55%),
+      radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+    background-size: auto, 22px 22px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .nmc-why .option.active {
+    flex-grow: 10000;
+    transform: scale(1);
+    max-width: 600px;
+    margin: 0;
+    border-radius: 40px;
+  }
+  .nmc-why .option .shadow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    transition: 0.5s cubic-bezier(0.05, 0.61, 0.41, 0.95);
+    pointer-events: none;
+  }
+  .nmc-why .option.active .shadow {
+    box-shadow: inset 0 -120px 120px -120px rgba(0, 0, 0, 0.9), inset 0 -120px 120px -100px rgba(0, 0, 0, 0.9);
+  }
+  .nmc-why .option:not(.active) .shadow {
+    bottom: -40px;
+    box-shadow: inset 0 -120px 0px -120px rgba(0, 0, 0, 0.9), inset 0 -120px 0px -100px rgba(0, 0, 0, 0.9);
+  }
+  .nmc-why .option .label {
+    display: flex;
+    align-items: flex-end;
+    position: absolute;
+    right: 0;
+    height: 44px;
+    transition: 0.5s cubic-bezier(0.05, 0.61, 0.41, 0.95);
+  }
+  .nmc-why .option.active .label { bottom: 22px; left: 22px; }
+  .nmc-why .option:not(.active) .label { bottom: 10px; left: 8px; }
+  .nmc-why .option .label .icon {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    border-radius: 100%;
+    background-color: #ffffff;
+    color: var(--acc, rgb(var(--c-deep)));
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+  .nmc-why .option .label .icon svg { width: 22px; height: 22px; }
+  .nmc-why .option .label .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    margin-left: 12px;
+    min-width: 300px;
+    max-width: 420px;
+    color: #ffffff;
+    padding-bottom: 1px;
+  }
+  .nmc-why .option .label .info > div {
+    position: relative;
+    transition: 0.5s cubic-bezier(0.05, 0.61, 0.41, 0.95), opacity 0.5s ease-out;
+  }
+  .nmc-why .option.active .label .info > div { left: 0px; opacity: 1; }
+  .nmc-why .option:not(.active) .label .info > div { left: 20px; opacity: 0; }
+  .nmc-why .option .label .info .main {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .nmc-why .option .label .info .sub {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.85);
+    transition-delay: 0.1s;
+  }
+
+  @media (max-width: 900px) {
+    .nmc-why .options { height: 360px; }
+  }
+  @media (max-width: 640px) {
+    .nmc-why .svc-root .head { flex-direction: column; gap: 18px; }
+    /* on small screens the row becomes a vertical accordion so all six
+       services stay reachable (the reference pen hid trailing cards —
+       hiding services is not an option here) */
+    .nmc-why .options { flex-direction: column; height: auto; }
+    .nmc-why .option { min-width: 0; min-height: 64px; margin: 6px 0; flex-grow: 0; }
+    .nmc-why .option.active { min-height: 300px; max-width: none; margin: 6px 0; }
+    .nmc-why .option .label .info { min-width: 0; max-width: calc(100vw - 140px); }
+    .nmc-why .option:not(.active) .label { bottom: 10px; left: 10px; }
+    .nmc-why .option.active .label { bottom: 16px; left: 16px; }
+  }
+
+</style>
+</head>
+<body>
+<div class="nmc-why">
+
+  <div class="page-frame">
+    <div class="section-wrap">
+      <div class="section-label"><span class="tag-bracket">&lt;</span><span class="tag-name">WhyUs</span><span class="tag-slash"> /&gt;</span></div>
+
+      <div class="cert-badge">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="nmcWhyCertGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop class="grad-a" offset="0%"></stop>
+              <stop class="grad-b" offset="100%"></stop>
+            </linearGradient>
+          </defs>
+          <circle class="ring-dash" cx="60" cy="60" r="54"></circle>
+          <circle class="ring-fill" cx="60" cy="60" r="42" fill="url(#nmcWhyCertGrad)"></circle>
+          <path class="check-path" d="M43 61l11 11 24-26"></path>
+        </svg>
+      </div>
+
+      <h2 class="cert-heading" data-i18n-html="svcCert_h2">Certified Salesforce Professionals for your Goals</h2>
+
+      <ul class="cert-points">
+        <li class="cert-point">
+          <svg class="check-ico" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <p data-i18n-html="svcCert_p1">Deep technical expertise, backed by <span class="accent">official Salesforce certifications</span>. Our team holds <span class="accent-deep">enabling credentials</span> issued directly by Salesforce — not third-party claims.</p>
+        </li>
+        <li class="cert-point">
+          <svg class="check-ico" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <p data-i18n-html="svcCert_p2"><span class="accent">Certified specialists</span>, proven skills, solutions built to last.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="svc-root">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <div class="eyebrow"><span class="b">&lt;</span><span class="n">Services</span><span class="b"> /&gt;</span></div>
+          <h2><span data-i18n="svc_heading">What we provide</span><span class="cursor"></span></h2>
+        </div>
+        <div>
+          <div class="head-copy"><span data-i18n-html="svc_head_copy">We help data-driven brands build the operating system for Salesforce Marketing Cloud — to find and pull their growth levers. <b>From journey orchestration to data unification</b>, we turn Marketing Cloud into your competitive advantage.</span></div>
+          <div class="hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9l10.5 4.2-4.6 1.7L13.2 20 9 9z"/><path d="M6.8 2.4l.9 2.2M2.4 6.8l2.2.9M2.9 2.9l1.7 1.7"/></svg>
+            <span data-i18n="svc_hint">Click a card to explore</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="options" id="svcOptions">
+        <div class="option active" style="--optionBackground:linear-gradient(160deg,#311a7a,#7b61ff);--acc:#5b3fe0;" role="button" tabindex="0" aria-expanded="true">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path fill="currentColor" d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path fill="currentColor" opacity="0.6" d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c1_title">AI Inside Marketing Cloud</span></div>
+              <div class="sub"><span data-i18n="c1_desc">Einstein &amp; Agentforce at work — smarter campaigns, less manual effort.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="option" style="--optionBackground:linear-gradient(160deg,#101f52,#4f7bff);--acc:#3a5fd6;" role="button" tabindex="0" aria-expanded="false">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="10" cy="14" r="7" stroke="currentColor" stroke-width="1.6" opacity="0.5" fill="none"/><circle cx="10" cy="14" r="4" stroke="currentColor" stroke-width="1.6" opacity="0.85" fill="none"/><circle cx="10" cy="14" r="1.3" fill="currentColor"/><path d="M13 11l7-7M20 4h-4M20 4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c2_title">Optimizing Campaign Performance</span></div>
+              <div class="sub"><span data-i18n="c2_desc">Measure, manage and amplify performance on every touchpoint.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="option" style="--optionBackground:linear-gradient(160deg,#4b1a70,#a45cff);--acc:#7e3fd6;" role="button" tabindex="0" aria-expanded="false">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="6" r="2.1" fill="currentColor" opacity="0.55"/><circle cx="19" cy="6" r="2.1" fill="currentColor" opacity="0.55"/><circle cx="5" cy="18" r="2.1" fill="currentColor" opacity="0.55"/><circle cx="19" cy="18" r="2.1" fill="currentColor" opacity="0.55"/><path d="M5 6L12 12M19 6L12 12M5 18L12 12M19 18L12 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/><circle cx="12" cy="12" r="3.4" fill="currentColor"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c3_title">Data Unification &amp; Governance</span></div>
+              <div class="sub"><span data-i18n="c3_desc">Clean, connected, audit-ready data across every channel.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="option" style="--optionBackground:linear-gradient(160deg,#132a6b,#5e9cf0);--acc:#3d78d6;" role="button" tabindex="0" aria-expanded="false">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 18c3-1 4-4 6-4s2 3 5 3 4-4 6-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" fill="none"/><circle cx="3" cy="18" r="1.4" fill="currentColor"/><path d="M20 3.2c1.5 0 2.6 1.2 2.6 2.6 0 1.9-2.6 4.4-2.6 4.4s-2.6-2.5-2.6-4.4c0-1.4 1.1-2.6 2.6-2.6z" fill="currentColor"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c4_title">Journey &amp; UX Breakdown</span></div>
+              <div class="sub"><span data-i18n="c4_desc">Core infrastructure for seamless, data-driven experiences.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="option" style="--optionBackground:linear-gradient(160deg,#3a2b8f,#8f7bff);--acc:#6a55e0;" role="button" tabindex="0" aria-expanded="false">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.4-8 4.4-8-4.4L12 3z" fill="currentColor"/><path d="M4 12.4l8 4.4 8-4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" fill="none"/><path d="M4 16.8l8 4.4 8-4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.32" fill="none"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c5_title">Tech Stack Analysis</span></div>
+              <div class="sub"><span data-i18n="c5_desc">Insights to enhance Marketing Cloud architecture &amp; integrations.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="option" style="--optionBackground:linear-gradient(160deg,#241a5e,#6a5cff);--acc:#4b2fd1;" role="button" tabindex="0" aria-expanded="false">
+          <div class="shadow"></div>
+          <div class="label">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 20V13M11 20V8M17 20v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.55" fill="none"/><path d="M4 11l5-4 4 2.5 6-6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="19" cy="3" r="1.3" fill="currentColor"/></svg></div>
+            <div class="info">
+              <div class="main"><span data-i18n="c6_title">Reporting &amp; Performance Analytics</span></div>
+              <div class="sub"><span data-i18n="c6_desc">Real-time dashboards that turn data into decisions.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.querySelector('.nmc-why');
+  if (!root) return;
+
+  /* ---------------- i18n (unchanged behaviour) ---------------- */
+  var DICT = {
+    en: {
+      svc_heading: "What we provide",
+      svc_hint: "Click a card to explore",
+      c1_title: "AI Inside Marketing Cloud",
+      c1_desc: "Einstein & Agentforce at work — smarter campaigns, less manual effort.",
+      c2_title: "Optimizing Campaign Performance",
+      c2_desc: "Measure, manage and amplify performance on every touchpoint.",
+      c3_title: "Data Unification & Governance",
+      c3_desc: "Clean, connected, audit-ready data across every channel.",
+      c4_title: "Journey & UX Breakdown",
+      c4_desc: "Core infrastructure for seamless, data-driven experiences.",
+      c5_title: "Tech Stack Analysis",
+      c5_desc: "Insights to enhance Marketing Cloud architecture & integrations.",
+      c6_title: "Reporting & Performance Analytics",
+      c6_desc: "Real-time dashboards that turn data into decisions."
+    },
+    it: {
+      svc_heading: "Cosa offriamo",
+      svc_hint: "Clicca una card per esplorare",
+      c1_title: "L'AI dentro Marketing Cloud",
+      c1_desc: "Einstein e Agentforce al lavoro: campagne più intelligenti, meno lavoro manuale.",
+      c2_title: "Ottimizzare le Performance delle Campagne",
+      c2_desc: "Misuriamo, gestiamo e amplifichiamo le performance su ogni touchpoint.",
+      c3_title: "Unificazione e Governance dei Dati",
+      c3_desc: "Dati puliti, connessi e pronti per l'audit su ogni canale.",
+      c4_title: "Analisi di Journey e UX",
+      c4_desc: "Infrastruttura di base per esperienze fluide e data-driven.",
+      c5_title: "Analisi dello Stack Tecnologico",
+      c5_desc: "Insight per migliorare architettura e integrazioni di Marketing Cloud.",
+      c6_title: "Reporting e Performance Analytics",
+      c6_desc: "Dashboard in tempo reale che trasformano i dati in decisioni."
+    }
+  };
+  var DICT_HTML = {
+    en: {
+      svcCert_h2: "Certified Salesforce Professionals for your Goals",
+      svcCert_p1: "Deep technical expertise, backed by <span class=\"accent\">official Salesforce certifications</span>. Our team holds <span class=\"accent-deep\">enabling credentials</span> issued directly by Salesforce — not third-party claims.",
+      svcCert_p2: "<span class=\"accent\">Certified specialists</span>, proven skills, solutions built to last.",
+      svc_head_copy: "We help data-driven brands build the operating system for Salesforce Marketing Cloud — to find and pull their growth levers. <b>From journey orchestration to data unification</b>, we turn Marketing Cloud into your competitive advantage."
+    },
+    it: {
+      svcCert_h2: "Professionisti Salesforce Certificati per i Tuoi Obiettivi",
+      svcCert_p1: "Competenza tecnica approfondita, supportata da <span class=\"accent\">certificazioni Salesforce ufficiali</span>. Il nostro team possiede <span class=\"accent-deep\">credenziali abilitanti</span> rilasciate direttamente da Salesforce — non dichiarazioni di terze parti.",
+      svcCert_p2: "<span class=\"accent\">Specialisti certificati</span>, competenze comprovate, soluzioni costruite per durare.",
+      svc_head_copy: "Aiutiamo i brand data-driven a costruire il sistema operativo per Salesforce Marketing Cloud, per individuare e attivare le proprie leve di crescita. <b>Dall'orchestrazione dei journey all'unificazione dei dati</b>, trasformiamo Marketing Cloud nel tuo vantaggio competitivo."
+    }
+  };
+  function currentLang() { try { return localStorage.getItem('nmc_lang') || 'en'; } catch (e) { return 'en'; } }
+  function applyLang(lang) {
+    var l = lang === 'it' ? 'it' : 'en';
+    var dict = DICT[l], dictHtml = DICT_HTML[l];
+    root.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    root.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-html');
+      if (dictHtml[key]) el.innerHTML = dictHtml[key];
+    });
+  }
+
+  /* wrap each word of a heading in a mask/inner span pair so GSAP can
+     animate a premium per-word reveal (yPercent slide, clipped by the
+     mask) instead of a plain fade */
+  function wrapWords(el) {
+    if (!el) return;
+    var text = el.textContent;
+    var words = text.split(' ').filter(Boolean);
+    el.innerHTML = words.map(function (w) {
+      return '<span class="word-mask"><span class="word-inner">' + w + '</span></span>';
+    }).join(' ');
+  }
+  function refreshWordSplits() {
+    wrapWords(root.querySelector('.cert-heading'));
+    wrapWords(root.querySelector('.svc-root .head h2 [data-i18n="svc_heading"]'));
+  }
+
+  applyLang(currentLang());
+  refreshWordSplits();
+  window.addEventListener('nmc:langchange', function (e) {
+    applyLang(e.detail && e.detail.lang ? e.detail.lang : currentLang());
+    refreshWordSplits();
+  });
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hasGSAP = typeof gsap !== 'undefined';
+
+  if (hasGSAP) {
+    if (typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
+
+    /* ---------------- certification badge: continuous ring spin ---------------- */
+    var ringDash = root.querySelector('.cert-badge .ring-dash');
+    if (ringDash && !reduce) {
+      gsap.to(ringDash, { rotate: 360, transformOrigin: '50% 50%', duration: 50, repeat: -1, ease: 'none' });
+    }
+
+    /* prep checkmark paths for a draw-in animation (stroke-dasharray trick) */
+    function prepDraw(path) {
+      if (!path) return 0;
+      var len = path.getTotalLength();
+      path.style.strokeDasharray = len;
+      path.style.strokeDashoffset = len;
+      return len;
+    }
+    var badgeCheck = root.querySelector('.cert-badge .check-path');
+    var pointChecks = Array.prototype.slice.call(root.querySelectorAll('.cert-point .check-ico path'));
+    if (!reduce) {
+      prepDraw(badgeCheck);
+      pointChecks.forEach(prepDraw);
+    }
+
+    /* ---------------- section 1 scroll-in: badge + heading + points ---------------- */
+    var tl1 = gsap.timeline({
+      scrollTrigger: { trigger: '.nmc-why .section-wrap', start: 'top 82%', once: true },
+      defaults: { ease: 'power3.out' }
+    });
+    tl1
+      .from('.nmc-why .section-label', { opacity: 0, y: 14, duration: 0.5 }, 0)
+      .from('.nmc-why .cert-badge', { opacity: 0, scale: 0.55, rotate: -25, duration: 0.85, ease: 'back.out(1.7)' }, 0.12)
+      .from('.nmc-why .cert-heading .word-inner', { yPercent: 130, rotate: 3, opacity: 0, duration: 0.9, stagger: 0.045, ease: 'power4.out' }, 0.32)
+      .from('.nmc-why .cert-point', { opacity: 0, y: 16, duration: 0.55, stagger: 0.15 }, '-=0.35');
+    if (!reduce && badgeCheck) {
+      tl1.to(badgeCheck, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' }, 0.55);
+    }
+    if (!reduce && pointChecks.length) {
+      tl1.to(pointChecks, { strokeDashoffset: 0, duration: 0.45, stagger: 0.15, ease: 'power2.out' }, '-=0.5');
+    }
+
+    /* ---------------- section 2 header scroll-in ---------------- */
+    gsap.timeline({
+      scrollTrigger: { trigger: '.nmc-why .svc-root .head', start: 'top 85%', once: true },
+      defaults: { ease: 'power2.out' }
+    })
+      .from('.nmc-why .eyebrow', { opacity: 0, y: 12, scale: 0.9, duration: 0.5 })
+      .from('.nmc-why .head h2 .word-inner', { yPercent: 130, rotate: 3, opacity: 0, duration: 0.85, stagger: 0.05, ease: 'power4.out' }, '-=0.25')
+      .from('.nmc-why .head h2 .cursor', { opacity: 0, duration: 0.3 }, '-=0.1')
+      .from('.nmc-why .head-copy', { opacity: 0, y: 12, duration: 0.5 }, '-=0.3')
+      .from('.nmc-why .hint', { opacity: 0, y: 8, duration: 0.4 }, '-=0.2');
+  }
+  // No GSAP: everything is visible by default (no inline "from" hidden states
+  // were ever applied), so there is nothing to reveal — just skip motion.
+  // The word-mask spans still render fine as plain inline text, and the
+  // expanding cards below run on plain CSS transitions + a click handler.
+
+  /* ---------------- expanding-cards accordion ---------------- */
+  var optionsWrap = document.getElementById('svcOptions');
+  if (!optionsWrap) return;
+  var options = Array.prototype.slice.call(optionsWrap.querySelectorAll('.option'));
+
+  function activate(target) {
+    options.forEach(function (opt) {
+      var on = opt === target;
+      opt.classList.toggle('active', on);
+      opt.setAttribute('aria-expanded', on ? 'true' : 'false');
+    });
+  }
+
+  options.forEach(function (opt) {
+    opt.addEventListener('click', function () { activate(opt); });
+    opt.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate(opt);
+      }
+    });
+  });
+
+  /* entrance: options rise in with a stagger, then the CSS accordion
+     takes over (transitions only, no per-frame JS) */
+  if (hasGSAP && !reduce && typeof ScrollTrigger !== 'undefined') {
+    gsap.from(options, {
+      opacity: 0,
+      y: 36,
+      duration: 0.7,
+      stagger: 0.08,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: '.nmc-why .options', start: 'top 85%', once: true },
+      clearProps: 'opacity,transform'
+    });
+  }
+
+  document.fonts && document.fonts.ready && document.fonts.ready.then(function () {
+    if (typeof ScrollTrigger !== 'undefined' && hasGSAP) ScrollTrigger.refresh();
+  });
+})();
+</script>
+</body>
+</html>
